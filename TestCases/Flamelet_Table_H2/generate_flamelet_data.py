@@ -1,3 +1,9 @@
+import sys, os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.abspath(os.path.join(current_dir, '../../'))
+sys.path.append(root_dir)
+
 # Generate flamelet data for pre-mixed hydrogen-air problems 
 
 from Common.DataDrivenConfig import FlameletAIConfig 

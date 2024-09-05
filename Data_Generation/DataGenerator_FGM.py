@@ -417,15 +417,20 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
             self.gas.set_mixture_fraction(mix_status, self.__fuel_string, self.__oxidizer_string)
 
         # Define Cantera adiabatic flame object.
-        flame:ct.FreeFlame = ct.FreeFlame(self.gas, width=1e-2)
-        flame.set_refine_criteria(ratio=3, slope=0.04, curve=0.06, prune=0.02)
+
+        #initial grid with a large width
+        initialgrid = [0.01*i for i in list(range(11))]
+        #flame:ct.FreeFlame = ct.FreeFlame(self.gas, width=1e-2)
+        flame:ct.FreeFlame = ct.FreeFlame(self.gas, grid=initialgrid)
+        #flame.set_refine_criteria(ratio=3, slope=0.04, curve=0.06, prune=0.02)
+        flame.set_refine_criteria(ratio=2, slope=0.025, curve=0.025)
 
         # Multi-component diffusion for differential diffusion effects.
         flame.transport_model = self.__transport_model
 
         # Try to solve the flamelet solution. If solution diverges, move on to next flamelet.
         try:
-            flame.solve(loglevel=0, auto=True)
+            flame.solve(loglevel=0, refine_grid=True, auto=False)
             
             # Computing mass flow rate for later burner flame evaluation
             self.m_dot_free_flame = flame.velocity[0]*flame.density[0]
