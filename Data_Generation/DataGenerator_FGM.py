@@ -487,16 +487,17 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         else:
             self.gas.set_mixture_fraction(mix_status, self.__fuel_string, self.__oxidizer_string)
 
-        burner_flame = ct.BurnerFlame(self.gas, width=18e-3)
-        burner_flame.set_refine_criteria(ratio=3.0, slope=0.05, curve=0.1)
-        burner_flame.transport_model = self.__transport_model
+        #burner_flame = ct.BurnerFlame(self.gas, width=18e-3)
+        #burner_flame.set_refine_criteria(ratio=3.0, slope=0.05, curve=0.1)
+        #burner_flame.transport_model = self.__transport_model
 
         for i_burnerflame, m_dot_next in enumerate(m_dot):
             try:
-                burner_flame.burner.mdot = m_dot_next
+                #burner_flame.burner.mdot = m_dot_next
                 # Attempt to solve the burner flame simulation
-                burner_flame.solve(loglevel=0, auto=True)
-            
+                #burner_flame.solve(loglevel=0, auto=True)
+                burner_flame = self.compute_SingleBurnerFlame(mix_status, self.__T_unburnt_lower, ct.one_atm, m_dot_next)
+
                 # Computing ANN flamelet data
                 variables, data_calc = self.__SaveFlameletData(burner_flame, self.gas)
 
@@ -1061,6 +1062,36 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         with open(output_dir + "/" + filename_out, "a+") as fid:
             csvWriter = csv.writer(fid)
             csvWriter.writerows(total_data)
+    
+    def compute_SingleBurnerFlame(self, mix_status, T_burner, p, m_dot):
+        #print("Computing single burner flame")
+        self.gas = ct.Solution(self.__reaction_mechanism)
+        #print("burner flame, Tb=",T_burner)
+        self.gas.TP = T_burner, ct.one_atm 
+        #print("burner flame, mix=",mix_status," ",self.__fuel_string," ",self.__oxidizer_string) 
+        # Defining mixture ratio based on equivalence ratio or mixture fraction.
+        if self.__define_equivalence_ratio:
+            self.gas.set_equivalence_ratio(mix_status, self.__fuel_string, self.__oxidizer_string)
+        else:
+            self.gas.set_mixture_fraction(mix_status, self.__fuel_string, self.__oxidizer_string)
+
+        #print("Single burner flame, mdot=",m_dot) 
+        # initial grid with a large width 
+        initialgrid = [0.01*i for i in list(range(11))]
+
+        #f = ct.BurnerFlame(gas, width=0.500)
+        f = ct.BurnerFlame(self.gas, grid=initialgrid)
+        f.burner.mdot = m_dot
+
+        f.set_refine_criteria(ratio=2, slope=0.025, curve=0.025)
+        f.transport_model = self.__transport_model 
+        #print("transport model=",f.transport_model)
+        #f.solve(loglevel=0, auto=True)
+        # switch off auto to prevent automatic domain width reduction
+        f.solve(loglevel=0, refine_grid = True, auto=False)
+        #print("End computing single burner flame")
+
+        return f
 
 def ComputeFlameletData(Config:FlameletAIConfig, run_parallel:bool=False, N_processors:int=2):
     """Generate flamelet data according to FlameletAIConfig settings either in serial or parallel.
