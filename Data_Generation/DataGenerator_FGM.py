@@ -419,7 +419,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         # Define Cantera adiabatic flame object.
 
         #initial grid with a large width
-        initialgrid = [0.01*i for i in list(range(11))]
+        initialgrid = [0.01*i for i in list(range(31))]
         #flame:ct.FreeFlame = ct.FreeFlame(self.gas, width=1e-2)
         flame:ct.FreeFlame = ct.FreeFlame(self.gas, grid=initialgrid)
         #flame.set_refine_criteria(ratio=3, slope=0.04, curve=0.06, prune=0.02)
@@ -1082,7 +1082,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
 
         #print("Single burner flame, mdot=",m_dot) 
         # initial grid with a large width 
-        initialgrid = [0.01*i for i in list(range(11))]
+        initialgrid = [0.01*i for i in list(range(31))]
 
         #f = ct.BurnerFlame(gas, width=0.500)
         f = ct.BurnerFlame(self.gas, grid=initialgrid)
