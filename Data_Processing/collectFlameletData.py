@@ -711,8 +711,8 @@ class FlameletConcatenator:
                     beta_pv_flamelet, beta_h1_flamelet, beta_h2_flamelet, beta_z_flamelet = self.__Config.ComputeBetaTerms(variables, D)
                     PD_data = np.zeros([len(D), len(self.__PD_train_vars)])
                     PD_data[:, 0] = beta_pv_flamelet
-                    PD_data[:, 1] = beta_h1_flamelet
-                    PD_data[:, 2] = beta_h2_flamelet
+                    PD_data[:, 1] = beta_h2_flamelet
+                    PD_data[:, 2] = beta_h1_flamelet
                     PD_data[:, 3] = beta_z_flamelet
 
                 if is_fuzzy:
