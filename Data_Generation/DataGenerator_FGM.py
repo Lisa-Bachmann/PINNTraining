@@ -435,6 +435,11 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
             # Computing mass flow rate for later burner flame evaluation
             self.m_dot_free_flame = flame.velocity[0]*flame.density[0]
             
+            # Check if mixture is burning
+            if np.max(flame.T) <= 600:
+                print("The flame is not burning")
+                return
+
             variables, data_calc = self.__SaveFlameletData(flame, self.gas)
 
             if self.__run_fuzzy:
@@ -502,7 +507,9 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
                 # Attempt to solve the burner flame simulation
                 #burner_flame.solve(loglevel=0, auto=True)
                 burner_flame = self.compute_SingleBurnerFlame(mix_status, self.__T_unburnt_lower, ct.one_atm, m_dot_next)
-
+                if np.max(burner_flame.T) <= 600:
+                    print("The flame is not burning")
+                    return
                 # Computing ANN flamelet data
                 variables, data_calc = self.__SaveFlameletData(burner_flame, self.gas)
 
@@ -579,6 +586,9 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         flame.set_refine_criteria(ratio=3, slope=0.04, curve=0.06, prune=0.02)
 
         flame.solve(loglevel=0, auto=True)
+        if np.max(flame.T) <= 600:
+            print("The flame is not burning")
+            return
         variables, data_calc = self.__SaveFlameletData(flame, self.gas)
 
         counterflame_filename = "counterflamelet_strain_0_Tu"+str(round(T_ub, 4))+".csv"
@@ -623,6 +633,9 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
                 # Try solving the flame
                 flame.solve(loglevel=0)
                 self.last_counterflame_massfraction = flame.Y
+                if np.max(flame.T) <= 600:
+                    print("The flame is not burning")
+                    return
                 variables, data_calc = self.__SaveFlameletData(flame, self.gas)
 
                 counterflame_filename = "counterflamelet_strain_"+str(n_iter)+"_Tu"+str(round(T_ub, 4))+".csv"
