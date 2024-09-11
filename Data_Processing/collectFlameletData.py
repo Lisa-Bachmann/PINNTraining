@@ -362,13 +362,15 @@ class FlameletConcatenator:
                 print("Reading equilibrium data...")
             mixture_folders = np.sort(np.array(self.mfracs_equilibrium))
             for z in mixture_folders[::self.__mfrac_skip]:
-                if self.__ignore_mixture_bounds:
-                    i_equilibrium_total = self.__InterpolateFlameletData(self.__flameletdata_dir + "/equilibrium_data/", z, i_start, i_equilibrium_total)
-                else:
-                    if z[:len(folder_header)] == folder_header:
-                        mixture_status = float(z[len(folder_header):])
-                        if (mixture_status <= self.__mix_status_max) and (mixture_status >= self.__mix_status_min):
-                            i_equilibrium_total = self.__InterpolateFlameletData(self.__flameletdata_dir + "/equilibrium_data/", z, i_start, i_equilibrium_total)
+                # Only read burnt data
+                if "_b_" in z:
+                    if self.__ignore_mixture_bounds:
+                        i_equilibrium_total = self.__InterpolateFlameletData(self.__flameletdata_dir + "/equilibrium_data/", z, i_start, i_equilibrium_total, is_equilibirum=True)
+                    else:
+                        if z[:len(folder_header)] == folder_header:
+                            mixture_status = float(z[len(folder_header):])
+                            if (mixture_status <= self.__mix_status_max) and (mixture_status >= self.__mix_status_min):
+                                i_equilibrium_total = self.__InterpolateFlameletData(self.__flameletdata_dir + "/equilibrium_data/", z, i_start, i_equilibrium_total, is_equilibirum=True)
             if self.__verbose > 0:
                 print("Done!")
             i_start +=  i_equilibrium_total
@@ -606,7 +608,7 @@ class FlameletConcatenator:
         return 
     
     
-    def __InterpolateFlameletData(self, flamelet_dir:str, eq_file:str, i_start:int, i_flamelet_total:int, is_fuzzy:bool=False):
+    def __InterpolateFlameletData(self, flamelet_dir:str, eq_file:str, i_start:int, i_flamelet_total:int, is_fuzzy:bool=False, is_equilibirum:bool=False):
 
         flamelets = listdir(flamelet_dir + "/" + eq_file)
         for i_flamelet, f in enumerate(flamelets):
@@ -616,8 +618,11 @@ class FlameletConcatenator:
             variables = fid.readline().strip().split(',')
             fid.close()
 
-            # Load flamelet data
-            D = np.loadtxt(flamelet_dir + "/" + eq_file + "/" + f, delimiter=',',skiprows=1)
+            # Load flamelet data, only read the first line if equilibrium
+            if is_equilibirum:
+                D = np.loadtxt(flamelet_dir + "/" + eq_file + "/" + f, delimiter=',', skiprows=1, max_rows=1)
+            else:
+                D = np.loadtxt(flamelet_dir + "/" + eq_file + "/" + f, delimiter=',',skiprows=1)
             
             # Set flamelet controlling variables
             CV_flamelet = np.zeros([len(D), self.__N_control_vars])
