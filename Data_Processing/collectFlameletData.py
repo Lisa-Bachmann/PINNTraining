@@ -666,6 +666,12 @@ class FlameletConcatenator:
                 for iVar_LookUp, LookUp_var in enumerate(self.__LookUp_vars):
                     idx_var_flamelet = variables.index(LookUp_var)
                     LookUp_data[:, iVar_LookUp] = D[:, idx_var_flamelet]
+                    #Set first and last two values of Heat Release to zero
+                    if LookUp_var == "Heat_Release":
+                        LookUp_data[:10, iVar_LookUp] = 0
+                        LookUp_data[-95:, iVar_LookUp] = 0
+                        #print('+++ HEAT RELEASE DATA CORRECTED')
+
         
                 
                 # Load species sources data
@@ -695,7 +701,12 @@ class FlameletConcatenator:
                     Sources_data[:, 1 + 3*iSp + 1] = species_destruction_rate[:, iSp]
                     Sources_data[:, 1 + 3*iSp + 2] = species_net_rate[:, iSp]
 
-                # Compute preferential diffusion scalars
+                # Set the first and last two values of source terms to zero
+                Sources_data[:10, :] = 0
+                Sources_data[-95:, :]= 0
+                #print('+++ SOURCES DATA CORRECTED')
+                
+                # Compute preferential diffusion scalar
                 if self.__Config.PreferentialDiffusion():
                     beta_pv_flamelet, beta_h1_flamelet, beta_h2_flamelet, beta_z_flamelet = self.__Config.ComputeBetaTerms(variables, D)
                     PD_data = np.zeros([len(D), len(self.__PD_train_vars)])
