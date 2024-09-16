@@ -114,6 +114,14 @@ class SU2TableGenerator_Base:
             raise Exception("Curvature threshold value should be higher than zero.")
         return 
     
+    def SetRefinementRadius(self, val_radius:float):
+
+        if val_radius > 0:
+            self._curvature_threshold = val_radius
+        else:
+            raise Exception("Refinement Radius value should be higher than zero.")
+        return 
+    
     
     def DefineFlameletDataInterpolator(self):
 
@@ -314,6 +322,14 @@ class SU2TableGenerator:
         else:
             raise Exception("Curvature threshold value should be higher than zero.")
         return
+    
+    def SetRefinementRadius(self, val_radius:float):
+
+        if val_radius > 0:
+            self._curvature_threshold = val_radius
+        else:
+            raise Exception("Refinement Radius value should be higher than zero.")
+        return 
     
     def SetMixtureFractionLimits(self, mix_frac_min:float, mix_frac_max:float):
         """
