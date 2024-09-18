@@ -657,10 +657,17 @@ class FlameletConcatenator:
                         idx_cond = variables.index("Conductivity")
                         idx_density = variables.index("Density")
                         TD_data[:, iVar_TD] = D[:, idx_cond] / (D[:, idx_cp] * D[:, idx_density])
+                    elif TD_var == "Temperature":
+                        idx_var_flamelet = variables.index(TD_var)
+                        if max(D[:, idx_var_flamelet])<600:
+                            print(f + "is not burning and therefore not saved")
+                            break
+                        else:
+                            TD_data[:, iVar_TD] = D[:, idx_var_flamelet]
                     else:
                         idx_var_flamelet = variables.index(TD_var)
                         TD_data[:, iVar_TD] = D[:, idx_var_flamelet]
-
+                    
                 # Load flamelet look-up variable data
                 LookUp_data = np.zeros([len(D), len(self.__LookUp_vars)])
                 for iVar_LookUp, LookUp_var in enumerate(self.__LookUp_vars):
@@ -711,8 +718,11 @@ class FlameletConcatenator:
                     beta_pv_flamelet, beta_h1_flamelet, beta_h2_flamelet, beta_z_flamelet = self.__Config.ComputeBetaTerms(variables, D)
                     PD_data = np.zeros([len(D), len(self.__PD_train_vars)])
                     PD_data[:, 0] = beta_pv_flamelet
+                    #like this: flame actually exists, but does not converge, beta h1 and beta h2 are wrong compared to without PrefDif. The other way around: no flame
                     PD_data[:, 1] = beta_h1_flamelet
                     PD_data[:, 2] = beta_h2_flamelet
+
+
                     PD_data[:, 3] = beta_z_flamelet
 
                 if is_fuzzy:
