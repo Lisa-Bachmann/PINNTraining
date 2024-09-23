@@ -720,10 +720,14 @@ class FlameletAIConfig(Config):
             if i_e != idx_O:
                     Z_fuel_elements += atoms_in_fuel[i_e] * Z_elements[i_e]/self.gas.atomic_weights[i_e]
 
-        # Computing the oxygen stochimetric coefficient
-        nu_O = Z_fuel_elements * self.gas.atomic_weights[idx_O]/Z_elements[idx_O]
+        # Computing the oxygen stochiometric coefficient
+        #nu_O = Z_fuel_elements * self.gas.atomic_weights[idx_O]/Z_elements[idx_O]
+        # for each 1 weight of fuel, we have Z_O/Z_F weight of oxygen, with a molar weight of W
+        # ! should we here not have the molar weight ratios of the fuel and the air to get the stoichiometric ratio?  
+        nu_O = (Z_elements[idx_O]/Z_fuel_elements)/self.gas.atomic_weights[idx_O]
+        print("stoichiometric coefficient of oxygen element:",nu_O)
 
-        # Filling in fuel specie mass fraction array
+        # Filling in fuel species mass fraction array
         __fuel_weights_s = np.zeros(self.gas.n_species)
         for i_fuel in range(n_fuel):
             idx_sp = self.gas.species_index(self.__fuel_species[i_fuel])
@@ -750,32 +754,59 @@ class FlameletAIConfig(Config):
                 Z_elements_2[i_e] += self.gas.n_atoms(self.gas.species_name(i_s), self.gas.element_name(i_e)) * self.gas.atomic_weights[i_e] * Y_oxidizer_s[i_s] / self.gas.molecular_weights[i_s]
 
         # Computing stochimetric coefficient of pure fuel stream
-        beta_1 = 0
+        beta_1 = 0.0
         for i_e in range(self.gas.n_elements):
             beta_1 += atoms_in_fuel[i_e]*Z_elements_1[i_e]/self.gas.atomic_weights[i_e]
-        beta_1 -= nu_O * Z_elements_1[idx_O]/self.gas.atomic_weights[idx_O]
+        #beta_1 -= nu_O * Z_elements_1[idx_O]/self.gas.atomic_weights[idx_O]
 
-        # Computing stochimetric coefficient of pure oxidizer stream
-        beta_2 = 0
-        for i_e in range(self.gas.n_elements):
-            beta_2 += atoms_in_fuel[i_e] * Z_elements_2[i_e]/self.gas.atomic_weights[i_e]
-        beta_2 -= nu_O * Z_elements_2[idx_O]/self.gas.atomic_weights[idx_O]
+        # Computing stochiometric coefficient of pure oxidizer stream
+        #for i_e in range(self.gas.n_elements):
+        #    #beta_2 += atoms_in_fuel[i_e] * Z_elements_2[i_e]/self.gas.atomic_weights[i_e]
+        #    beta_2 += atoms_in_fuel[i_e] * Z_elements_2[i_e]
+        # only the oxygen in the air stream (according to lecture notes of Heinz Pitsch)
+        beta_2 = Z_elements_2[idx_O]/(nu_O * self.gas.atomic_weights[idx_O])
+        print("air stream beta_2=",beta_2)
 
         # Computing mixture fraction coefficient
         self.__mixfrac_coefficients = np.zeros(self.gas.n_species)
+        beta_fuel = 0
+        beta_ox = 0
+        print(self.gas.species_names)
+        print("elemental mass fraction H", self.gas.elemental_mass_fraction('H'))
+        print("elemental mass fraction O", self.gas.elemental_mass_fraction('O'))
+
         for i_s in range(self.gas.n_species):
             z_fuel = 0
-            for i_e in range(self.gas.n_elements):
-                z_fuel += atoms_in_fuel[i_e] * self.gas.n_atoms(self.gas.species_name(i_s), self.gas.element_name(i_e))/self.gas.molecular_weights[i_s]
-            z_ox = -nu_O * self.gas.n_atoms(self.gas.species_name(i_s), 'O')/self.gas.molecular_weights[i_s]
+           # for i_e in range(self.gas.n_elements):
+           #     z_fuel += atoms_in_fuel[i_e] * self.gas.n_atoms(self.gas.species_name(i_s), self.gas.element_name(i_e))/self.gas.molecular_weights[i_s]
+            z_fuel = self.gas.n_atoms(self.gas.species_name(i_s), 'H')/(self.gas.molecular_weights[i_s])
 
+            z_ox = -1 * self.gas.n_atoms(self.gas.species_name(i_s), 'O')/(self.gas.molecular_weights[i_s])
+            print("z_fuel=", z_fuel)
+            print("z_ox=", z_ox)
             self.__mixfrac_coefficients[i_s] = (1/(beta_1 - beta_2)) * (z_fuel + z_ox)
 
-        # Constant term in mixture fraction equation
-        self.__mixfrac_constant = -beta_2 / (beta_1 - beta_2)
+            beta_fuel += z_fuel * self.gas.Y[i_s]
+            beta_ox += z_ox * self.gas.Y[i_s]
+        print(Y_fuel_s)
+        print(Y_oxidizer_s)
+        Z = (beta_fuel+beta_ox-beta_2)/(beta_1-beta_2)
 
-        # Mixture fraction weight of the carrier specie
-        self.__mixfrac_coeff_carrier = self.__mixfrac_coefficients[idx_c]
+        # # Constant term in mixture fraction equation
+        # self.__mixfrac_constant = -beta_2 / (beta_1 - beta_2)
+
+        # # Mixture fraction weight of the carrier specie
+        # self.__mixfrac_coeff_carrier = self.__mixfrac_coefficients[idx_c]
+        
+        # beta_sum=0        
+        # for i_s in range(self.gas.n_species):             
+        #     beta_sum += self.__mixfrac_coefficients[i_s] *  
+        # Z = beta_sum + self.__mixfrac_constant        #print(str(beta)+'---'+ str(beta_1)+'---'+ str(beta_2)+'---'+ str(beta_sum)+'---'+str(Z))#, self.__mixfrac_coeff_carrier)        print(Z)
+        print("Beta_fuel=", beta_fuel)
+        print("Beta_ox=", beta_ox)
+
+        print("Beta=", beta_fuel+beta_ox)
+        print("MIXFRAC=",Z)
         return 
     
     def GetMixtureFractionCoefficients(self):
@@ -1385,11 +1416,13 @@ class FlameletAIConfig(Config):
         cp_c = flamelet_data[:, variables.index("Cp-"+self.__carrier_specie)]
         h_c = flamelet_data[:, variables.index("h-"+self.__carrier_specie)]
         beta_h2 = np.zeros(len(flamelet_data))
-        Le_sp = [0.337253691, 0.215323223, 0.809943764, 1.282811468, 0.825282815, 1.018423759, 1.254973835, 1.263384492, 1.272916457] #average Le numbers of freeflamelet_phi0.5_Tu300K
+        #Le_sp = [0.337253691, 0.215323223, 0.809943764, 1.282811468, 0.825282815, 1.018423759, 1.254973835, 1.263384492, 1.272916457] #average Le numbers of freeflamelet_phi0.5_Tu300K
 
         for iSp in range(len(self.__species_in_mixture)):
             # Get flamelet species Lewis number trend.
-            Le_av = Le_sp[iSp]
+            Le_sp = flamelet_data[:variables.index("Le-"+self.__species_in_mixture[iSp])]
+            Le_av = np.average(Le_sp)
+
             # Get species mass fraction
             Y_sp = flamelet_data[:, variables.index("Y-"+self.__species_in_mixture[iSp])]
             beta_z += (self.__mixfrac_coefficients[iSp] - self.__mixfrac_coeff_carrier) * Y_sp / Le_av
@@ -1402,7 +1435,8 @@ class FlameletAIConfig(Config):
         
         beta_pv = np.zeros(np.shape(flamelet_data)[0])
         for iPv in range(len(self.__pv_definition)):
-            Le_av = Le_sp[iPv]
+            Le_sp = flamelet_data[:variables.index("Le-"+self.__pv_definition[iPv])]
+            Le_av = np.average(Le_sp)
             beta_pv += self.__pv_weights[iPv] * flamelet_data[:, variables.index("Y-"+self.__pv_definition[iPv])] / Le_av
 
         return beta_pv, beta_h1, beta_h2, beta_z
@@ -1740,4 +1774,3 @@ class FlameletAIConfig(Config):
         file.close()
         return 
     
-
