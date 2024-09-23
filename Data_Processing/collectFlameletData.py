@@ -664,6 +664,11 @@ class FlameletConcatenator:
                             break
                         else:
                             TD_data[:, iVar_TD] = D[:, idx_var_flamelet]
+                            # Find values where HeatRelease and Sourceterms should be nonzero
+                            T_max = np.max(TD_data[:,iVar_TD])
+                            threshold = 0.9*T_max
+                            mask = (TD_data[:, iVar_TD] >=400) & (TD_data[:, iVar_TD] <= threshold)
+                            sourceterm_zero_line_numbers = np.where(mask)[1]
                     else:
                         idx_var_flamelet = variables.index(TD_var)
                         TD_data[:, iVar_TD] = D[:, idx_var_flamelet]
@@ -675,10 +680,14 @@ class FlameletConcatenator:
                     LookUp_data[:, iVar_LookUp] = D[:, idx_var_flamelet]
                     #Set first and last two values of Heat Release to zero
                     if LookUp_var == "Heat_Release":
-                        LookUp_data[:10, iVar_LookUp] = 0
-                        LookUp_data[-95:, iVar_LookUp] = 0
-                        #print('+++ HEAT RELEASE DATA CORRECTED')
+                        LookUp_data[sourceterm_zero_line_numbers, iVar_LookUp]=0
 
+# Find the maximum value in column Amax_A = np.max(data[:,0])
+
+# Set the values in column B to zero based on the conditions
+# data[(data[:,0] <400) | (data[:,0] >0.9 * max_A),1] =0
+# # Save the modified data to a new file
+# np.savetxt('modified_file.csv', data, delimiter=',')
         
                 
                 # Load species sources data
@@ -709,10 +718,11 @@ class FlameletConcatenator:
                     Sources_data[:, 1 + 3*iSp + 2] = species_net_rate[:, iSp]
 
                 # Set the first and last two values of source terms to zero
-                Sources_data[:10, :] = 0
-                Sources_data[-95:, :]= 0
+                #Sources_data[:10, :] = 0
+                #Sources_data[-95:, :]= 0
                 #print('+++ SOURCES DATA CORRECTED')
-                
+                Sources_data[sourceterm_zero_line_numbers, :]=0
+
                 # Compute preferential diffusion scalar
                 if self.__Config.PreferentialDiffusion():
                     beta_pv_flamelet, beta_h1_flamelet, beta_h2_flamelet, beta_z_flamelet = self.__Config.ComputeBetaTerms(variables, D)
