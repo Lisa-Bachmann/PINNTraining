@@ -1476,10 +1476,14 @@ class FlameletAIConfig(Config):
         h_c = flamelet_data[:, variables.index("h-"+self.__carrier_specie)]
         beta_h2 = np.zeros(len(flamelet_data))
 
+        #   H2   H    O    O2   OH   H2O  HO2  H2O2 N2 
+        Le=[0.4, 0.3, 1.7, 1.1, 1.4, 1.1, 1.6, 1.6, 1.1]    
         for iSp in range(len(self.__species_in_mixture)):
             # Get flamelet species Lewis number trend.
             Le_sp = flamelet_data[:, variables.index("Le-"+self.__species_in_mixture[iSp])]
-            Le_av = self.AverageLewisNumber(Le_sp, iSp)
+            #Le_av = self.AverageLewisNumber(Le_sp, iSp)
+            # constant Le per species, global
+            Le_av = Le[iSp]
 
             # Get species mass fraction
             Y_sp = flamelet_data[:, variables.index("Y-"+self.__species_in_mixture[iSp])]
@@ -1494,7 +1498,9 @@ class FlameletAIConfig(Config):
         beta_pv = np.zeros(len(flamelet_data))
         for iPv in range(len(self.__pv_definition)):
             Le_sp = flamelet_data[:, variables.index("Le-"+self.__pv_definition[iPv])]
-            Le_av = self.AverageLewisNumber(Le_sp, self.gas.species_index(self.__pv_definition[iPv]))
+            #Le_av = self.AverageLewisNumber(Le_sp, self.gas.species_index(self.__pv_definition[iPv]))
+            # constant Le per species, global
+            Le_av - Le[iPv]
             beta_pv += self.__pv_weights[iPv] * flamelet_data[:, variables.index("Y-"+self.__pv_definition[iPv])] / Le_av
 
         return beta_pv, beta_h1, beta_h2, beta_z

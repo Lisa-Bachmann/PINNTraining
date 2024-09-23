@@ -801,10 +801,9 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
             if not self.__run_freeflames:
                 self.ComputeFreeFlames(mix_status=mix_status, T_ub=self.__T_unburnt_lower, i_freeflame=0)
 
-            # Define mass flow rate range.
-            m_dot_range = np.linspace(self.m_dot_free_flame, 0.001*self.m_dot_free_flame, self.__n_flamelets+1)
+            # Define mass flow rate range., 0.99 to avoid blowoff
+            m_dot_range = np.linspace(0.99 * self.m_dot_free_flame, 0.001*self.m_dot_free_flame, self.__n_flamelets+1)
             m_dot_range = m_dot_range[:-1]
-
             # Generate and safe adiabatic flamelet data.
             self.ComputeBurnerFlames(mix_status=mix_status, m_dot=m_dot_range)
 
