@@ -660,16 +660,15 @@ class FlameletConcatenator:
                         TD_data[:, iVar_TD] = D[:, idx_cond] / (D[:, idx_cp] * D[:, idx_density])
                     elif TD_var == "Temperature":
                         idx_var_flamelet = variables.index(TD_var)
-                        if max(D[:, idx_var_flamelet])<600:
-                            print(f + "is not burning and therefore not saved")
+                        if max(D[:,idx_var_flamelet])<600:
                             BurningFlamelet = False
                             break
                         else:
-                            TD_data[:, iVar_TD] = D[:, idx_var_flamelet]
+                            TD_data[:,iVar_TD] = D[:,idx_var_flamelet]
                             # Find values where HeatRelease and Sourceterms should be nonzero
-                            T_max = np.max(D[:,iVar_TD])
+                            T_max = np.max(D[:,idx_var_flamelet])
                             threshold = 0.9*T_max
-                            mask = (D[:, iVar_TD] <=400) | (D[:, iVar_TD] >= threshold)
+                            mask = (D[:,idx_var_flamelet] <=400) | (D[:,idx_var_flamelet] >= threshold)
                             sourceterm_zero_line_numbers = np.where(mask)[0]
                     elif  BurningFlamelet:
                         idx_var_flamelet = variables.index(TD_var)
@@ -684,6 +683,7 @@ class FlameletConcatenator:
                         #Set first and last two values of Heat Release to zero
                         if LookUp_var == "Heat_Release":
                             LookUp_data[sourceterm_zero_line_numbers, iVar_LookUp]=0
+                            
 
 # Find the maximum value in column Amax_A = np.max(data[:,0])
 
