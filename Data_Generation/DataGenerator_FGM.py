@@ -423,7 +423,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         #flame:ct.FreeFlame = ct.FreeFlame(self.gas, width=1e-2)
         flame:ct.FreeFlame = ct.FreeFlame(self.gas, grid=initialgrid)
         #flame.set_refine_criteria(ratio=3, slope=0.04, curve=0.06, prune=0.02)
-        flame.set_refine_criteria(ratio=2, slope=0.02, curve=0.02)
+        flame.set_refine_criteria(ratio=2, slope=0.025, curve=0.025)
 
         # Multi-component diffusion for differential diffusion effects.
         flame.transport_model = self.__transport_model
@@ -583,7 +583,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         flame.oxidizer_inlet.Y = self.__oxidizer_string
         flame.oxidizer_inlet.T = T_ub
         flame.oxidizer_inlet.mdot = rho_oxidizer*v_ox
-        flame.set_refine_criteria(ratio=2, slope=0.02, curve=0.02)
+        flame.set_refine_criteria(ratio=2, slope=0.025, curve=0.025)
 
         flame.solve(loglevel=0, auto=True)
         if np.max(flame.T) <= 600:
@@ -681,7 +681,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         else:
             gas_eq.set_mixture_fraction(mix_status, self.__fuel_string, self.__oxidizer_string)
 
-        gas_eq.TP = max(T_range), ct.one_atm 
+        gas_eq.TP = min(T_range), ct.one_atm 
         H_max = gas_eq.enthalpy_mass
         # In case of reaction products, set the maximum enthalpy to that of the reactants at the maximum temperature.
         if burnt:
@@ -1101,7 +1101,7 @@ class FlameletGenerator_Cantera(DataGenerator_Base):
         f = ct.BurnerFlame(self.gas, grid=initialgrid)
         f.burner.mdot = m_dot
 
-        f.set_refine_criteria(ratio=2, slope=0.02, curve=0.02)
+        f.set_refine_criteria(ratio=2, slope=0.025, curve=0.025)
         f.transport_model = self.__transport_model 
         #print("transport model=",f.transport_model)
         #f.solve(loglevel=0, auto=True)
