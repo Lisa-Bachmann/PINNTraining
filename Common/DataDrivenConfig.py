@@ -1500,7 +1500,7 @@ class FlameletAIConfig(Config):
             Le_sp = flamelet_data[:, variables.index("Le-"+self.__pv_definition[iPv])]
             #Le_av = self.AverageLewisNumber(Le_sp, self.gas.species_index(self.__pv_definition[iPv]))
             # constant Le per species, global
-            Le_av - Le[iPv]
+            Le_av = Le[iPv]
             beta_pv += self.__pv_weights[iPv] * flamelet_data[:, variables.index("Y-"+self.__pv_definition[iPv])] / Le_av
 
         return beta_pv, beta_h1, beta_h2, beta_z
